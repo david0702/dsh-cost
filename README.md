@@ -19,8 +19,10 @@ DSH（DeepSeek Harness）对话底部的**费用显示插件**。在对话下方
 
 ```bash
 # 在你的 profile 目录（例如 ~/.dsh/profiles/web/）下
-npm install @david0702/dsh-cost
+npm install git+https://github.com/david0702/dsh-cost.git
 ```
+
+> 发布到 npm 后也可用 `npm install @david0702/dsh-cost`（当前尚未发布到 npm，请用上面的 git URL）。
 
 2. 在 profile 的 `cordis.patch.yml` 的 `- insert:` 层加一行：
 
