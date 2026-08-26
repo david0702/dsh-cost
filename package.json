@@ -1,0 +1,30 @@
+{
+  "name": "@david0702/dsh-cost",
+  "version": "0.1.0",
+  "description": "DSH（DeepSeek Harness）对话底部费用显示插件：按每笔请求的时间+模型分批计费，分时段（高峰/空闲/历史）明细，模型归属，读图金额与账户余额。",
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./client": { "default": "./lib/client.js" },
+    "./package.json": "./package.json"
+  },
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "deepseek",
+    "harness",
+    "cost",
+    "费用",
+    "计费"
+  ],
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"],
+      "platform": "web"
+    }
+  },
+  "peerDependencies": {
+    "react": "^18.2.0"
+  }
+}
