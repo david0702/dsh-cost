@@ -1,6 +1,6 @@
 # dsh-cost
 
-DSH（DeepSeek Harness）对话底部的**费用显示插件**。在对话下方的统计行基础上，展示实时累计费用，并把费用按**每笔请求的实际发生时间与当时的模型**分批准确计费，支持高峰 / 空闲 / 历史分时段、模型归属、读图金额、账户余额与可选的费用阈值提醒。
+DSH（DeepSeek Harness）对话底部的**费用显示插件**。在对话下方的统计行基础上，展示实时累计费用，并把费用按**每笔请求的实际发生时间与当时的模型**分批准确计费，支持高峰 / 空闲 / 历史分时段、模型归属、读图金额与账户余额。
 
 ## 功能
 
@@ -8,9 +8,8 @@ DSH（DeepSeek Harness）对话底部的**费用显示插件**。在对话下方
 - **分时段计价**：DeepSeek 2026-08-17 起峰谷价。高峰 = 工作日 9:00–12:00 / 14:00–18:00（北京时间），其余为空闲；8-17 前为旧价（flat）。周末一律空闲。
 - **分时段明细卡**（悬停查看）：历史 / 高峰 / 空闲 三档，当前档加粗，底部按金额占比分段小条。
 - **模型归属**：按模型拆分调用次数与金额，多模型时自动分列。
-- **读图金额**：把会话里读图（视觉输入）的 token 单独记账。图片 token 按 DeepSeek 官方规则估算（进模型前自动缩放，单张上限 384 token，用官方计算器实测口径线性拟合，平均误差 ~5%）。
+- **读图金额**：把会话里读图（视觉输入）的 token 单独记账。图片 token 按 DeepSeek 官方规则估算（进模型前自动缩放，单张上限 384 token，按官方计算器实测口径线性拟合，平均误差 ~5%）。
 - **账户余额**：卡片顶部「· 余额 ¥X」，5 分钟刷新，来源为官方 `GET /user/balance`。
-- **可选费用阈值提醒**：本会话累计费用超过阈值时，通过 `notifierPath` 配置的外部程序弹一次通知（默认关闭）。
 
 ## 安装
 
@@ -35,23 +34,13 @@ npm install @david0702/dsh-cost
 
 ## 配置
 
-可选，在 `cordis.patch.yml` 的插件行里加：
-
-```yaml
-- id: cost
-  name: '@david0702/dsh-cost'
-  config:
-    notifierPath: 'C:\\path\\to\\notifier.exe'   # 费用阈值提醒外部程序；不配则不启用
-```
-
-- `notifierPath`：费用超过阈值时调用。留空则阈值提醒自动禁用（只提示、不弹窗）。
-- 阈值：在客户端 `lib/client.js` 的 `COST_ALERT_THRESHOLD`（默认 50，单位 `¥`）。去重后每次会话只提醒一次。
+无必填配置。API Key 走 DSH 的 credentials（`ctx.credentials.resolve("DEEPSEEK_API_KEY")`），用于拉取余额。
 
 ## 兼容性
 
 - 依赖 DSH 的具体版本与约定：
   - 客户端使用 `conversation.composer.dock` 槽位、`props.useProjection("tokenUsage")`、`props.useProjection("sessionStats")`、`props.modelDirectories`。
-  - 宿主使用 `ctx.webServer.register`、`ctx.credentials.resolve("DEEPSEEK_API_KEY")`、Node 全局 `fetch`、`node:child_process`。
+  - 宿主使用 `ctx.webServer.register`、`ctx.credentials.resolve("DEEPSEEK_API_KEY")`、Node 全局 `fetch`。
 - 定价与高峰时段常量写死在 `lib/index.js` 的 `RATES` / `PEAK_EPOCH_UTC`，按官方发布更新。
 - 实际 token 数以模型接口返回为准；`imageTokensOf` 与卡片金额为 DeepSeek 估算口径（官方说明：估算值，以接口返回为准）。
 

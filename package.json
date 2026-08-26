@@ -9,6 +9,17 @@
     "./client": { "default": "./lib/client.js" },
     "./package.json": "./package.json"
   },
+  "files": [
+    "lib/index.js",
+    "lib/client.js"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/david0702/dsh-cost.git"
+  },
   "license": "MIT",
   "keywords": [
     "dsh",
