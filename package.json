@@ -4,6 +4,9 @@
   "description": "DSH（DeepSeek Harness）对话底部费用显示插件：按每笔请求的时间+模型分批计费，分时段（高峰/空闲/历史）明细，模型归属，读图金额与账户余额。",
   "type": "module",
   "main": "lib/index.js",
+  "scripts": {
+    "test": "node scripts/slot-inject-check.mjs"
+  },
   "exports": {
     ".": { "default": "./lib/index.js" },
     "./client": { "default": "./lib/client.js" },
