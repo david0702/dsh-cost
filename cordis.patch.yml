@@ -1,0 +1,13 @@
+# dsh-cost bundle patch —— 只新增插件自有条目，不改动任何官方组件。
+#
+# 安装方式（用户侧，无需再手写 profile patch）：
+#   dsh plugin --profile web add github:david0702/dsh-cost
+#   然后重启 dsh。
+#
+# 机制：`dsh plugin add` 时，依赖声明了 dsh.bundle.patch 的包会被自动加入
+# profile 的 dsh.profile.bundles，本文件随即成为一层 bundle patch；
+# 条目 name 由 profile 目录解析（node_modules/<pkg>/），与本包 package.json
+# 的 name、客户端 lib/client.js 里 __ModuleLoader__.load({ id }) 三者必须一致。
+- insert:
+    - id: dsh-cost
+      name: '@david0702/dsh-cost'

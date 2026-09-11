@@ -39,54 +39,43 @@ DSH（DeepSeek Harness）对话底部的**费用显示插件**。在对话下方
 
 ## 安装
 
-插件分为宿主半（Node 服务端）与客户端半（浏览器）。
-
-1. 把本包放入 DSH profile 的 `node_modules`：
+插件分为宿主半（Node 服务端）与客户端半（浏览器）。本包自带 bundle patch
+（`package.json` 的 `dsh.bundle.patch` → `cordis.patch.yml`），**不需要手写 profile 补丁**：
 
 ```bash
-# 在你的 profile 目录（例如 ~/.dsh/profiles/web/）下
-npm install git+https://github.com/david0702/dsh-cost.git
+dsh plugin --profile web add github:david0702/dsh-cost
 ```
 
-> 发布到 npm 后也可用 `npm install @david0702/dsh-cost`（当前尚未发布到 npm，请用上面的 git URL）。
+然后重启 dsh 即可（客户端改动刷新页面即生效；宿主改动需要重启进程，宿主插件不会热载宿主代码）。
 
-2. 在 profile 的 `cordis.patch.yml` 的 `- insert:` 层加一行：
+上一步在做什么：`dsh plugin add` 跑完 pnpm 后会自动核对已安装依赖——凡是声明了
+`dsh.bundle.patch` 的包会被加进 profile 的 `dsh.profile.bundles`，成为一层 bundle patch；
+本包的 patch 只插入一条插件自有条目：
 
 ```yaml
+# cordis.patch.yml（本包自带，无需手工复制）
 - insert:
-    - id: cost
+    - id: dsh-cost
       name: '@david0702/dsh-cost'
 ```
 
-3. 重启 dsh。客户端改动刷新页面即生效；宿主改动需要重启进程（宿主插件不会热载宿主代码）。
+### 三个名字必须一致（最容易踩的坑）
 
-4. 确认插件目录名与客户端 bundle 里的 id 一致（**最容易踩的坑**）：
-
-```bash
-# 目录名应当就是 @david0702/dsh-cost
-ls ~/.dsh/profiles/web/node_modules/@david0702/dsh-cost/package.json
-```
-
-DSH 的 client-modules 按**包名**（即 `node_modules/<pkg>/` 的 `<pkg>`）查找工厂，
+DSH 的 client-modules 按**包名**（`node_modules/<pkg>/` 的 `<pkg>`）查找客户端工厂，
 而 `lib/client.js` 是自注册脚本 `window.__ModuleLoader__.load({ id: "@david0702/dsh-cost", … })`。
-两者不一致时会报：
+因此下面三者必须同名，本包已自洽为 `@david0702/dsh-cost`：
 
-```
-client-modules: bundle … loaded without registering "@david0702/dsh-cost" via __ModuleLoader__.load
-failed to import loader entry <hash> (@david0702/dsh-cost): …
-```
+1. `package.json` 的 `name`
+2. 安装目录名（`node_modules/<pkg>/`）
+3. `lib/client.js` 里 `__ModuleLoader__.load({ id })`
 
-并且**整页 “Failed to load plugins”**（受影响的是一整批客户端包，不只本插件）。
-若你把本包放在别的目录名下（例如放进官方 scope `@deepseek-ai/dsh-cost` 以便与 DSH 自带包同处一个命名空间），
-就必须把 `lib/client.js` 第 1 行附近的 `id` 改成同一个名字，`cordis.patch.yml` 里的 `name` 也要一致。
+不一致时会报 `bundle … loaded without registering "@david0702/dsh-cost"`，
+并连累整个初始批次（整页 “Failed to load plugins”）。**不要**把本包放进官方
+`@deepseek-ai/*` 命名空间，也不要改 `id` 去迁就目录名——第三方插件只应使用自有 scope。
 
-还有一处更隐蔽的坑：client-modules 是按 **`package.json` 的 `name`** 建客户端条目的，
-所以 profile 里那份 `package.json` 的 `name` 必须与 `cordis.patch.yml` 里的 `name` 一致。
-实测症状：只改 `cordis.patch.yml` 而 profile 副本 `name` 仍是旧名时，插件**静默消失**、
-既不报错也不出现在 `__DSH_BOOT__.entries`（总条目数少 1）。排查方式：
+验证是否进组合（浏览器控制台）：
 
 ```js
-// 浏览器控制台
 __DSH_BOOT__.entries.map((e) => e.id).filter((id) => /cost/i.test(id))
 // 期望输出 ["@david0702/dsh-cost"]；空数组说明条目没进组合
 ```
@@ -100,6 +89,9 @@ __DSH_BOOT__.entries.map((e) => e.id).filter((id) => /cost/i.test(id))
 - 依赖 DSH 的具体版本与约定：
   - 客户端使用 `conversation.composer.dock` 槽位、`props.useProjection("tokenUsage")`、`props.useProjection("sessionStats")`、`props.modelDirectories`。
   - 宿主使用 `ctx.webServer.register`、`ctx.credentials.resolve("DEEPSEEK_API_KEY")`、Node 全局 `fetch`。
+- **逐版本兼容声明在 `package.json` 的 `dsh.compatibility.dshReleases`**（对应官方发布逐项 `compatible` / `incompatible` / `unknown`），
+  实测口径与证据记录见 [`docs/store-conformance.md`](docs/store-conformance.md)：**只有真实跑过一次性 Profile 安装/启动/卸载的版本才标 `compatible`**（当前为 `0.1.5-rc.1`），未验证的一律 `unknown`。
+  宽泛范围（`dsh` 字段）只作参考，不构成"可安装证据"。
 - **槽位注册必须走 `ctx.slots.inject(slot, cb)`**（DSH 0.1.5+）：
   `conversation.composer.dock` 由 `client-ui-conversation` 的 composer-bar 条目在其 children 表里声明，
   只在该条目挂载期间存在；直接调 `ctx.slots.register` 会抛
@@ -110,8 +102,7 @@ __DSH_BOOT__.entries.map((e) => e.id).filter((id) => /cost/i.test(id))
 - **`lib/client.js` 里 `__ModuleLoader__.load({ id })` 必须与 loader 条目解析出的模块 id 一致**
   （即 profile 里 `node_modules/<pkg>/` 的目录名）。对不上时 client-modules 会报
   `bundle ... loaded without registering "<pkg>"`，且会连累整个初始批次，表现为整页 “Failed to load plugins”。
-  本机 profile 装的目录名是 `@deepseek-ai/dsh-cost`，因此文件里写 `@deepseek-ai/dsh-cost`；
-  若改从 npm 安装 `@david0702/dsh-cost`，则要同步改回 `@david0702/dsh-cost`。
+  本包三处名字统一为 `@david0702/dsh-cost`（见上节），不要为了让目录名迁就官方 scope 而改 `id`。
 - 定价与高峰时段常量写死在 `lib/index.js` 的 `RATES` / `PEAK_EPOCH_UTC`，按官方发布更新。
 - 实际 token 数以模型接口返回为准；`imageTokensOf` 与卡片金额为 DeepSeek 估算口径（官方说明：估算值，以接口返回为准）。
 

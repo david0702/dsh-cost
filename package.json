@@ -1,21 +1,68 @@
 {
   "name": "@david0702/dsh-cost",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "DSH（DeepSeek Harness）对话底部费用显示插件：按每笔请求的时间+模型分批计费，分时段（高峰/空闲/历史）明细，模型归属，读图金额与账户余额。",
   "type": "module",
   "main": "lib/index.js",
-  "scripts": {
-    "test": "node scripts/slot-inject-check.mjs"
-  },
   "exports": {
     ".": { "default": "./lib/index.js" },
     "./client": { "default": "./lib/client.js" },
     "./package.json": "./package.json"
   },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": ["@deepseek-ai/dsh-client-ui-conversation"]
+    },
+    "compatibility": {
+      "dsh": ">=0.1.2-alpha.4 <0.2.0",
+      "dshReleases": {
+        "0.1.1-rc.2": "unknown",
+        "0.1.2-alpha.2": "unknown",
+        "0.1.2-alpha.3": "unknown",
+        "0.1.2-alpha.4": "unknown",
+        "0.1.2-alpha.5": "unknown",
+        "0.1.2-rc.1": "unknown",
+        "0.1.3-alpha.2": "unknown",
+        "0.1.5-alpha.1": "unknown",
+        "0.1.5-alpha.2": "unknown",
+        "0.1.5-rc.1": "compatible",
+        "0.1.5-rc.2": "unknown"
+      }
+    }
+  },
+  "dshhub": {
+    "schemaVersion": 1,
+    "displayName": "dsh-cost",
+    "summary": "对话底部费用药丸：按每笔请求的时间与当时模型分批计费，分高峰/空闲/历史三档，含模型归属、读图 token 金额与官方账户余额（点击即刷新）。",
+    "categories": ["费用", "Web UI", "观测"],
+    "surfaces": ["host", "web"],
+    "capabilities": {
+      "provides": ["route:/api/dsh-cost/read", "route:/api/dsh-cost/balance"]
+    },
+    "compatibility": {
+      "dsh": ">=0.1.2-alpha.4 <0.2.0",
+      "node": ">=22"
+    },
+    "permissions": {
+      "network": ["https://api.deepseek.com"],
+      "files": "none",
+      "commands": "none",
+      "credentials": ["DEEPSEEK_API_KEY"]
+    }
+  },
   "files": [
     "lib/index.js",
-    "lib/client.js"
+    "lib/client.js",
+    "cordis.patch.yml"
   ],
+  "scripts": {
+    "test": "node scripts/slot-inject-check.mjs && node scripts/contract-check.mjs",
+    "check:contract": "node scripts/contract-check.mjs"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -23,22 +70,23 @@
     "type": "git",
     "url": "git+https://github.com/david0702/dsh-cost.git"
   },
+  "homepage": "https://github.com/david0702/dsh-cost#readme",
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "keywords": [
     "dsh",
     "deepseek",
+    "deepseek-harness",
     "harness",
+    "plugin",
+    "dsh-plugin",
+    "client-plugin",
     "cost",
+    "usage",
+    "billing",
     "费用",
     "计费"
-  ],
-  "dsh": {
-    "client": {
-      "inject": ["@deepseek-ai/dsh-client-ui-conversation"],
-      "platform": "web"
-    }
-  },
-  "peerDependencies": {
-    "react": "^18.2.0"
-  }
+  ]
 }
