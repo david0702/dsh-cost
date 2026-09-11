@@ -80,6 +80,40 @@ __DSH_BOOT__.entries.map((e) => e.id).filter((id) => /cost/i.test(id))
 // 期望输出 ["@david0702/dsh-cost"]；空数组说明条目没进组合
 ```
 
+## 开发
+
+```bash
+# 把工作区仓库直接链进 profile（pnpm link，改仓库文件即改插件，不产生副本）
+dsh plugin --profile web add /path/to/dsh-cost
+```
+
+链入后仓库就是 profile 的实体，**不会再出现"profile 副本与仓库漂移"**。
+
+改动生效范围（实测口径）：
+
+| 改动 | 生效方式 |
+|---|---|
+| `lib/client.js` | **保存即热更**：`dsh-client-modules` 监视客户端 bundle，内容变了就重算哈希、换 `rev`，前端重新拉取执行；刷新页面即可见，**不需要重启 `dsh web`** |
+| `lib/index.js` | **必须重启 `dsh web`**（宿主插件不会热载宿主代码） |
+| `package.json` 的 `dsh` 段（patch / client / 兼容表） | 重启（profile 组合在启动时合成） |
+| `README` / `docs` / 版本号 | 只随提交走，不影响运行 |
+
+日常循环：
+
+1. 在仓库里改代码（**不要再往 profile 目录里改**，也不要留 `client.js.bak-*` 之类手工备份）。
+2. 自检：`npm test`（槽位时序 + 上架契约），必要时 `node --check lib/index.js`。
+3. 看效果：客户端改动刷新页面；宿主改动重启 `dsh web`。
+4. 版本与兼容：用户可见行为变了就提 `version`；**只有真的跑过某个官方 DSH 版本的一次性 Profile，才把 `dsh.compatibility.dshReleases` 里那一项改成 `compatible`**，并在 `docs/store-conformance.md` 记录环境与步骤。
+5. 提交并 `git push origin master`（DSH STORE 每 8 小时自动复检，不需要在 Issue 里回复）。
+
+不打扰日常实例的做法：日常 `web` profile 从 GitHub 固定提交安装，另建开发 profile 指向工作区
+
+```bash
+dsh --profile dev --from-default-profile web   # 首启初始化
+dsh plugin --profile dev add /path/to/dsh-cost
+dsh --profile dev --port 3099 --no-open        # 与日常端口并存
+```
+
 ## 配置
 
 无必填配置。API Key 走 DSH 的 credentials（`ctx.credentials.resolve("DEEPSEEK_API_KEY")`），用于拉取余额。
